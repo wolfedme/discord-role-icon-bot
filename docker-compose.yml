@@ -1,0 +1,10 @@
+services:
+  role-bot:
+    image: discord-role-icon-bot:latest
+    container_name: role-bot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    network_mode: host
