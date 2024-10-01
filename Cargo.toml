@@ -10,5 +10,7 @@ serenity = "0.12.2"
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+emojis = { version = "0.6.4", features = ["serde"] }
+dirs = "5.0.1"

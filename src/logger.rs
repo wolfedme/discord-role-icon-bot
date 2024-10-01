@@ -1,3 +1,7 @@
+use tracing::Level;
+
 pub fn init() {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_max_level(Level::DEBUG)
+        .init();
 }

@@ -30,7 +30,22 @@ A specialized bot that dynamically appends icons to user server-nicknames based 
 
 4. **Create a `configuration.json` file:**
 
-TODO structure not final
+Either `cargo run` once to generate a `configuration.json` file and have the path output in the logs or create one manually in `<system_config_dir>/discord-role-icon-bot/configuration.json`
+
+See `configuration.json.example` for reference
+
+    ```json
+    {
+        "roles": [
+            {
+                "role_id": "role_id",
+                "name": "role_name",
+                "symbol": "symbol"
+            }
+        ]
+    }
+    ```
+    Replace `role_id`, `role_name`, and `symbol` with the actual values. The `role_id` can be found by right-clicking on the role in the Discord client and selecting "Copy ID".
 
 5. **Run**
 
