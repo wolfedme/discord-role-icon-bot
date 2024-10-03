@@ -10,6 +10,8 @@ use super::role::Role;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Configuration {
+    pub guest_role_id: u64,
+    pub log_channel_id: u64,
     pub roles: Vec<Role>,
 }
 
@@ -24,28 +26,97 @@ impl Configuration {
         if let Some(parent_dir) = full_config_path.parent() {
             fs::create_dir_all(parent_dir)?;
         }
+
         // Load or create the configuration file
-        debug!("Loading configuration from {:?}", full_config_path);
+        debug!("Searching config file in {:?}", full_config_path);
+
         let mut config_file: File = if !Path::new(&full_config_path).exists() {
-            debug!("Configuration file not found at {:?}", full_config_path);
-            info!("Creating configuration file at {:?}", full_config_path);
-            let mut file =
-                File::create(&full_config_path).expect("Could not create configuration file");
-            let default_config = Configuration::default();
-            let default_content = serde_json::to_string_pretty(&default_config)
-                .expect("Default config not serializable");
-            file.write_all(default_content.as_bytes())
-                .expect("Could not write buffer to file");
-            file.flush().expect("Could not flush output stream");
-            File::open(&full_config_path).expect("Could not open configuration file")
+            debug!("{:?} does not exist", full_config_path);
+
+            create_config_file(&full_config_path);
+            read_config_file(&full_config_path)
         } else {
             debug!("Configuration file found at {:?}", full_config_path);
-            File::open(&full_config_path).expect("Could not open configuration file")
+            read_config_file(&full_config_path)
         };
 
         let mut buffer = String::new();
         config_file.read_to_string(&mut buffer)?;
 
         Ok(serde_json::from_str(&buffer)?)
+    }
+}
+
+fn read_config_file(full_config_path: &std::path::PathBuf) -> File {
+    debug!(
+        "Trying to read configuration file at {:?}",
+        full_config_path
+    );
+
+    File::open(full_config_path).expect("Could not open configuration file")
+}
+
+fn create_config_file(full_config_path: &std::path::PathBuf) {
+    info!("Creating configuration file at {:?}", full_config_path);
+    let mut file = File::create(full_config_path).expect("Could not create configuration file");
+    let default_config = Configuration::default();
+    let default_content =
+        serde_json::to_string_pretty(&default_config).expect("Default config not serializable");
+    file.write_all(default_content.as_bytes())
+        .expect("Could not write buffer to file");
+    file.flush().expect("Could not flush output stream");
+}
+
+#[cfg(test)]
+mod tests {
+    use mockall::automock;
+
+    use super::*;
+
+    #[automock]
+    trait ReadFile {
+        fn read_to_string(&mut self, buf: &mut String) -> Result<usize, Error>;
+    }
+
+    struct MockFile {
+        content: String,
+    }
+
+    impl ReadFile for MockFile {
+        fn read_to_string(&mut self, buf: &mut String) -> Result<usize, Error> {
+            buf.push_str(&self.content);
+            Ok(self.content.len())
+        }
+    }
+
+    #[test]
+    fn test_load() {
+        let mock_content = r#"{
+            "guest_role_id": 123,
+            "log_channel_id": 456,
+            "roles":
+            [
+                {
+                    "id": 123,
+                    "name": "Test",
+                    "symbol": "🤖"
+                }
+            ]}"#;
+        let mut mock_file = MockFile {
+            content: mock_content.to_string(),
+        };
+
+        let mut buffer = String::new();
+        mock_file
+            .read_to_string(&mut buffer)
+            .expect("Could not read mock content");
+
+        let config: Configuration =
+            serde_json::from_str(&buffer).expect("Could not parse configuration");
+        assert_eq!(config.roles.len(), 1);
+        let first_role = config.roles.get(0).expect("Could not get role");
+        assert_eq!(first_role.id, 123);
+        assert_eq!(first_role.name, "Test");
+        assert_eq!(first_role.symbol, "🤖");
     }
 }

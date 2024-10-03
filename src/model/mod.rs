@@ -1,2 +1,2 @@
 pub mod configuration;
-mod role;
+pub mod role;

@@ -1,19 +1,24 @@
 {
+  "guest_role_id": 123123123123123123,
+  "log_channel_id": 123123123123123123,
   "roles": [
     {
       "id": "123123123123123123",
       "name": "admin",
-      "symbol": "👑"
+      "symbol": "👑",
+      "weight": 100
     },
     {
       "id": "123123123123123123",
       "name": "moderator",
-      "symbol": "🛡️"
+      "symbol": "🛡️",
+      "weight": 50
     },
     {
       "id": "123123123123123123",
       "name": "member",
-      "symbol": "👤"
+      "symbol": "👤",
+      "weight": 10
     }
   ]
 }

@@ -34,17 +34,17 @@ Either `cargo run` once to generate a `configuration.json` file and have the pat
 
 See `configuration.json.example` for reference
 
-    ```json
-    {
-        "roles": [
-            {
-                "role_id": "role_id",
-                "name": "role_name",
-                "symbol": "symbol"
-            }
-        ]
-    }
-    ```
+  ```json
+  {
+      "roles": [
+          {
+              "role_id": "role_id",
+              "name": "role_name",
+              "symbol": "symbol"
+          }
+      ]
+  }
+  ```
     Replace `role_id`, `role_name`, and `symbol` with the actual values. The `role_id` can be found by right-clicking on the role in the Discord client and selecting "Copy ID".
 
 5. **Run**
