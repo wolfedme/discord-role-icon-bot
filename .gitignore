@@ -27,3 +27,6 @@ Cargo.lock
 # ignore configuration and env files
 .env
 configuration.json
+
+# ignore sh script
+copy-to-pi.sh

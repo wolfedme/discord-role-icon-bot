@@ -1,9 +1,10 @@
-use serenity::all::{Context, GuildMemberUpdateEvent, Member};
-use tracing::debug;
+use serenity::all::{Context, EditMember, GuildMemberUpdateEvent, Member};
+use tracing::{debug, error, info, warn};
 
 use crate::model::configuration::Configuration;
 use crate::model::role::Role;
 use crate::utils::converter::convert_role_ids_to_u64;
+use crate::utils::emoji_changer::add_role_icon;
 
 pub async fn prepend_icon_to_name(
     ctx: &Context,
@@ -18,6 +19,14 @@ pub async fn prepend_icon_to_name(
         return;
     }
 
+    let member = match ctx.http.get_member(event.guild_id, event.user.id).await {
+        Ok(member) => member,
+        Err(why) => {
+            error!("Could not get member: {:?}", why);
+            return;
+        }
+    };
+
     debug!("Roles have changed, updating nickname");
 
     let event_roles_u64 = convert_role_ids_to_u64(event.roles.clone());
@@ -26,18 +35,35 @@ pub async fn prepend_icon_to_name(
 
     // TODO: Support multiple roles with same weight
     let role_with_highest_weight = matching_roles.iter().max_by_key(|role| role.weight);
+    let role_to_change = match role_with_highest_weight {
+        Some(role) => role,
+        None => {
+            warn!("No matching role found");
+            &Role::default()
+        }
+    };
     debug!("Role with highest weight: {:?}", role_with_highest_weight);
+    let username = member.display_name();
+    debug!("Username: {}", username);
 
-    // TODO: Get nickname, otherwise username
-    // TODO: Check if nickname starts with emoji
-    // TODO: If not, prepend emoji of role with highest weight
-    // TODO: Else, update emoji to emoji of role with highest weight
+    let new_username = add_role_icon(username.to_string(), &config.roles, role_to_change.id);
 
-    // TODO: If no matching role, remove emoji if there's one
+    match member
+        .guild_id
+        .edit_member(
+            &ctx.http,
+            member.user.id,
+            EditMember::default().nickname(new_username),
+        )
+        .await
+    {
+        Ok(_) => info!("Updated nickname for {}", member.user.name),
+        Err(e) => error!(
+            "Could not update nickname for {}: {:?}",
+            member.user.name, e
+        ),
+    }
 
-    // TODO: Update nickname
-    // TODO: Log changes
-    // TODO: Handle errors
     // TODO: Tests
 
     // TODO: Before & after nickname same -> do nothing
@@ -67,6 +93,7 @@ fn roles_have_changed(
                 event.user.id
             );
             if event.roles.is_empty() {
+                info!("User has no roles");
                 false
             } else {
                 true

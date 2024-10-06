@@ -1,2 +1,2 @@
-pub mod append_emoji;
 pub mod converter;
+pub mod emoji_changer;

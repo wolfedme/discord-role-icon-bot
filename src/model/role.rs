@@ -9,3 +9,14 @@ pub struct Role {
     pub symbol: &'static Emoji,
     pub weight: u8,
 }
+
+impl Role {
+    pub fn default() -> Role {
+        Role {
+            id: 0,
+            name: String::from(""),
+            symbol: emojis::get("❓").unwrap(),
+            weight: 0,
+        }
+    }
+}

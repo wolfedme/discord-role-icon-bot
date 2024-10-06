@@ -99,7 +99,8 @@ mod tests {
                 {
                     "id": 123,
                     "name": "Test",
-                    "symbol": "🤖"
+                    "symbol": "🤖",
+                    "weight": 20
                 }
             ]}"#;
         let mut mock_file = MockFile {

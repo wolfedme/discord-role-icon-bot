@@ -2,18 +2,15 @@
 
 # Variables
 CARGO := cargo
+RUSTUP := rustup
 DOCKER := docker
+TARGET := x86_64-unknown-linux-gnu
 PROJECT_NAME := discord-role-icon-bot
 DOCKER_IMAGE_NAME := discord-role-icon-bot
 DOCKER_TAG := latest
 
 # Default target
-all: build docker
-
-# Compile the Rust project
-build:
-	@echo "Building Rust project..."
-	$(CARGO) build --release
+all: docker
 
 # Create Docker image
 docker: build
