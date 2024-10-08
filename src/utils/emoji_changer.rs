@@ -53,7 +53,7 @@ fn remove_existing_role_icon(guild_member_name: &String, symbol_to_remove: &Emoj
     new_name.to_string()
 }
 
-fn contains_existing_role_icon(
+pub fn contains_existing_role_icon(
     guild_member_name: &String,
     config_roles: &Vec<Role>,
 ) -> Option<Role> {

@@ -3,8 +3,11 @@ use tracing::{debug, error, info, warn};
 
 use crate::model::configuration::Configuration;
 use crate::model::role::Role;
+use crate::utils::channel_logger::{log_to_channel, LogType};
 use crate::utils::converter::convert_role_ids_to_u64;
-use crate::utils::emoji_changer::add_role_icon;
+use crate::utils::emoji_changer::{add_role_icon, contains_existing_role_icon};
+
+// TODO: Log to channel
 
 pub async fn prepend_icon_to_name(
     ctx: &Context,
@@ -13,9 +16,8 @@ pub async fn prepend_icon_to_name(
     after: &Option<Member>,
     event: &GuildMemberUpdateEvent,
 ) {
-    print_debug_info(ctx, before, after, event).await;
     if !roles_have_changed(before, after, event) {
-        debug!("Roles have not changed, no need to update nickname");
+        info!("Roles have not changed, no need to update nickname");
         return;
     }
 
@@ -38,13 +40,23 @@ pub async fn prepend_icon_to_name(
     let role_to_change = match role_with_highest_weight {
         Some(role) => role,
         None => {
-            warn!("No matching role found");
-            &Role::default()
+            warn!("Role not included in configuration - skipping.");
+            return;
         }
     };
     debug!("Role with highest weight: {:?}", role_with_highest_weight);
     let username = member.display_name();
     debug!("Username: {}", username);
+
+    match contains_existing_role_icon(&username.to_string(), &config.roles) {
+        Some(role) => {
+            if role.id == role_to_change.id {
+                info!("Role icon already present in username, skipping");
+                return;
+            }
+        }
+        _ => {}
+    }
 
     let mut new_username = add_role_icon(username.to_string(), &config.roles, role_to_change.id);
 
@@ -65,11 +77,35 @@ pub async fn prepend_icon_to_name(
         )
         .await
     {
-        Ok(_) => info!("Updated nickname for {}", member.user.name),
-        Err(e) => error!(
-            "Could not update nickname for {}: {:?}",
-            member.user.name, e
-        ),
+        // TODO: Include role name in log message, mention member. Rich message -> before and after
+        Ok(_) => {
+            let msg = format!(
+                "Updated nickname for <@{}>\n\nOld nickname: {}\nBasedOnRole: <@&{}>",
+                member.user.id, username, role_to_change.id
+            );
+            info!(msg);
+            log_to_channel(
+                &ctx.http,
+                &config.features.log_to_channel,
+                &msg,
+                LogType::Info,
+            )
+            .await
+        }
+        Err(e) => {
+            let msg = format!(
+                "Could not update nickname for <@{}>: {:?}",
+                member.user.id, e
+            );
+            error!(msg);
+            log_to_channel(
+                &ctx.http,
+                &config.features.log_to_channel,
+                &msg,
+                LogType::Error,
+            )
+            .await
+        }
     }
 
     // TODO: Tests
@@ -122,39 +158,4 @@ fn _before_after_are_same(before: &Option<Member>, after: &Option<Member>) -> bo
         }
         _ => false,
     }
-}
-
-async fn print_debug_info(
-    ctx: &Context,
-    before: &Option<Member>,
-    after: &Option<Member>,
-    event: &GuildMemberUpdateEvent,
-) {
-    let roles_as_string: String = event
-        .roles
-        .iter()
-        .map(|role_id| role_id.to_string())
-        .collect::<Vec<String>>()
-        .join(", ");
-
-    let nick = event
-        .user
-        .nick_in(&ctx.http, event.guild_id)
-        .await
-        .unwrap_or_else(|| "None".to_string());
-
-    debug!(
-        "
-            Member_changed
-
-            Before: {before:?}
-            After: {after:?}
-            Roles_Event: {event_roles:?}
-            Member_Event_Nick: {event_nick:?}
-        ",
-        before = format!("{:?}", before),
-        after = format!("{:?}", after),
-        event_roles = roles_as_string,
-        event_nick = nick
-    );
 }

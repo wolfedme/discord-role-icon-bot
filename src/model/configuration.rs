@@ -6,13 +6,13 @@ use dirs::config_dir;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
 
+use super::feature::Features;
 use super::role::Role;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Configuration {
-    pub guest_role_id: u64,
-    pub log_channel_id: u64,
     pub roles: Vec<Role>,
+    pub features: Features,
 }
 
 const CONFIG_PATH: &str = "role-icon-bot/configuration.json";
@@ -92,8 +92,16 @@ mod tests {
     #[test]
     fn test_load() {
         let mock_content = r#"{
-            "guest_role_id": 123,
-            "log_channel_id": 456,
+            "features": {
+              "LOG_TO_CHANNEL": {
+                "ENABLED": true,
+                "CHANNEL_ID": 123456789012345678
+              },
+              "ASSIGN_GUEST_ROLE_ON_JOIN": {
+                "ENABLED": false,
+                "ROLE_ID": 123456789012345678
+              }
+            },
             "roles":
             [
                 {
@@ -116,8 +124,17 @@ mod tests {
             serde_json::from_str(&buffer).expect("Could not parse configuration");
         assert_eq!(config.roles.len(), 1);
         let first_role = config.roles.get(0).expect("Could not get role");
+        let features = config.features;
+
         assert_eq!(first_role.id, 123);
         assert_eq!(first_role.name, "Test");
         assert_eq!(first_role.symbol, "🤖");
+        assert_eq!(features.log_to_channel.enabled, true);
+        assert_eq!(features.log_to_channel.channel_id, 123456789012345678);
+        assert_eq!(features.assign_guest_role_on_join.enabled, false);
+        assert_eq!(
+            features.assign_guest_role_on_join.role_id,
+            123456789012345678
+        );
     }
 }
