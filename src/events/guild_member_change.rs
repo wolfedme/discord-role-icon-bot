@@ -46,7 +46,15 @@ pub async fn prepend_icon_to_name(
     let username = member.display_name();
     debug!("Username: {}", username);
 
-    let new_username = add_role_icon(username.to_string(), &config.roles, role_to_change.id);
+    let mut new_username = add_role_icon(username.to_string(), &config.roles, role_to_change.id);
+
+    match new_username.len() > 32 {
+        true => {
+            warn!("New nickname is longer than 32 characters, truncating");
+            new_username = new_username[..32].to_string();
+        }
+        false => debug!("New nickname is shorter than 32 characters"),
+    }
 
     match member
         .guild_id
@@ -65,12 +73,6 @@ pub async fn prepend_icon_to_name(
     }
 
     // TODO: Tests
-
-    // TODO: Before & after nickname same -> do nothing
-    // TODO: If longer than 32 characters -> truncate
-    // TODO: Nickname empty, use username
-    // TODO: Nickname not empty, prepend icon
-    // TODO: Check for existing icon and remove
     // TODO: Update on own namechange -> not important, nice to have
 }
 
